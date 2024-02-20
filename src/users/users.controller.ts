@@ -7,20 +7,49 @@ import {
   Patch,
   Delete,
   Query,
+  Session,
 } from '@nestjs/common';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UsersService } from './users.service';
+import { Serialize } from 'src/interceptors/serialize.interceptor';
+import { UserDto } from './dtos/user.dto';
+import { AuthService } from './auth.service';
 
 @Controller('auth')
 export class UsersController {
-  constructor(private usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService,
+    private authService: AuthService,
+  ) {}
 
   @Post('signup')
-  createUser(@Body() body: CreateUserDto) {
-    this.usersService.create(body.email, body.password);
+  async createUser(@Body() body: CreateUserDto, @Session() session: any) {
+    const user = await this.authService.signup(body.email, body.password);
+    session.userId = user.id;
+    return user;
   }
 
+  @Post('signin')
+  async signin(@Body() body: CreateUserDto, @Session() session: any) {
+    const user = await this.authService.signin(body.email, body.password);
+    session.userId = user.id;
+    return user;
+  }
+
+  @Get('profile')
+  async getProfile(@Session() session: any) {
+    const user = await this.usersService.findById(session.userId);
+    return user;
+  }
+
+  @Get('email')
+  async getUserByEmail(@Query('email') email: string) {
+    const user = await this.usersService.findByEmail(email);
+    return user;
+  }
+
+  @Serialize(UserDto)
   @Get(':id')
   async getUserById(@Param('id') id: string) {
     const user = await this.usersService.findById(parseInt(id));
@@ -35,20 +64,12 @@ export class UsersController {
 
   @Delete(':id')
   async removeUser(@Param('id') id: string) {
-    try {
-      return await this.usersService.remove(parseInt(id));
-    } catch (e: any) {
-      return e.message;
-    }
+    return await this.usersService.remove(parseInt(id));
   }
 
   @Patch(':id')
   async updateUser(@Param('id') id: string, @Body() body: UpdateUserDto) {
-    try {
-      await this.usersService.update(parseInt(id), body);
-      return await this.usersService.findById(parseInt(id));
-    } catch (e: any) {
-      return e.message;
-    }
+    await this.usersService.update(parseInt(id), body);
+    return await this.usersService.findById(parseInt(id));
   }
 }
