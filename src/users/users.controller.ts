@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   Session,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
@@ -40,7 +41,13 @@ export class UsersController {
   @Get('profile')
   async getProfile(@Session() session: any) {
     const user = await this.usersService.findById(session.userId);
+    if (!user) throw new UnauthorizedException();
     return user;
+  }
+
+  @Post('/signout')
+  async signOut(@Session() session: any) {
+    session.userId = null;
   }
 
   @Get('email')

@@ -13,11 +13,9 @@ export class UsersService {
   }
 
   async findById(id: number) {
-    try {
-      return await this.userRepo.findOneBy({ id: id });
-    } catch (e: any) {
-      throw new Error(e.message);
-    }
+    if (!id) return null;
+    const user = await this.userRepo.findOneBy({ id: id });
+    return user;
   }
 
   async findAllUsers() {
