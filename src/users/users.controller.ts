@@ -16,6 +16,8 @@ import { UsersService } from './users.service';
 import { Serialize } from 'src/interceptors/serialize.interceptor';
 import { UserDto } from './dtos/user.dto';
 import { AuthService } from './auth.service';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { User } from './user.entity';
 
 @Controller('auth')
 export class UsersController {
@@ -39,8 +41,7 @@ export class UsersController {
   }
 
   @Get('profile')
-  async getProfile(@Session() session: any) {
-    const user = await this.usersService.findById(session.userId);
+  async getProfile(@CurrentUser() user: User) {
     if (!user) throw new UnauthorizedException();
     return user;
   }
